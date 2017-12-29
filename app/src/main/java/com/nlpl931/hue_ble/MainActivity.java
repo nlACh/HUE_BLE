@@ -2,31 +2,29 @@ package com.nlpl931.hue_ble;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
-
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Button;
 import android.widget.Toast;
 
-import java.util.Set;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    public static String DEVICE_ADDR;
 
-    ListView plv;
-    TextView tpairedDev;
-
-    private BluetoothAdapter mBT;
-    private ArrayAdapter<String> pairedDevArrAdapter;
+    boolean isConnected=false;
+    private BluetoothAdapter ba = null;
+    private BluetoothSocket bs = null;
+    private OutputStream os = null;
+    public String addr = "98:D3:33:80:68:00";
+    private static final UUID uid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,64 +34,35 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
-
-        pairedDevArrAdapter = new ArrayAdapter<String>(this,R.layout.dev_list);
-        plv = (ListView) findViewById(R.id.pairedDevices);
-
-        plv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        Button set = findViewById(R.id.set);
+        set.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int arg, long l) {
-                tpairedDev = (TextView) findViewById(R.id.title_paired_devices);
-                tpairedDev.setText("Connecting...");
-
-                // Get the device MAC address, which is the last 17 chars in the View
-                String info = ((TextView) view).getText().toString();
-                Log.w("info:",info);
-                //String address = info.substring(info.length() - 17);
-                String address = "98:D3:33:80:68:00";
-
-                // Make an intent to start next activity while taking an extra which is the MAC address.
-                Intent i = new Intent(getBaseContext(), ArduinoMain.class);
-                i.putExtra(DEVICE_ADDR, address);
-                startActivity(i);
+            public void onClick(View view) {
+                if (isConnected)
+                    sendData("1223--0");
+                else
+                    Toast.makeText(getBaseContext(), "Connect first!!", Toast.LENGTH_SHORT).show();
             }
         });
-
-        plv.setAdapter(pairedDevArrAdapter);
     }
 
     @Override
     public void onResume()
     {
         super.onResume();
-
         chkBTstate();
-
-        pairedDevArrAdapter.clear();
-        mBT = BluetoothAdapter.getDefaultAdapter();
-        Set<BluetoothDevice> pairedDevices = mBT.getBondedDevices();
-
-        if (pairedDevices.size()>0) {
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-            for (BluetoothDevice device : pairedDevices) {
-                pairedDevArrAdapter.add(device.getName() + "\n");
-            }
-        }
-        else
-            pairedDevArrAdapter.add("no devices....");
-
     }
 
     private void chkBTstate()
     {
-        mBT=BluetoothAdapter.getDefaultAdapter();
-        if(mBT==null)
+        ba=BluetoothAdapter.getDefaultAdapter();
+        if(ba==null)
         {
             Toast.makeText(getBaseContext(), "BT not supported by device", Toast.LENGTH_LONG).show();
             finish();
         }
         else {
-            if(!mBT.isEnabled())
+            if(!ba.isEnabled())
             {
                 Intent enBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enBT,1);
@@ -101,6 +70,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void sendData(String msg)
+    {
+        byte[] msgBuffer = msg.getBytes();
+        try {
+            os.write(msgBuffer);
+        }catch (IOException ex)
+        {
+            Toast.makeText(getBaseContext(),ex.toString(),Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void connect(MenuItem item)
+    {
+        BluetoothDevice bd = ba.getRemoteDevice(addr);
+        try{
+            bs = bd.createRfcommSocketToServiceRecord(uid);
+        }catch (IOException ex1)
+        {
+            Toast.makeText(getBaseContext(), ex1.toString(), Toast.LENGTH_LONG ).show();
+        }
+
+        try {
+            bs.connect();
+        }catch (IOException e)
+        {
+            try {
+                bs.close();
+            }
+            catch (IOException e2) {
+                Toast.makeText(getBaseContext(), e2.toString(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        try {
+            os = bs.getOutputStream();
+        }catch (IOException osex)
+        {
+            Toast.makeText(getBaseContext(), osex.toString(), Toast.LENGTH_LONG).show();
+        }
+        sendData("x0");
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -117,8 +127,21 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.find) {
+            connect(item);
+            isConnected=true;
             return true;
+        }
+        if (id == R.id.disconnect)
+        {
+            try{
+                bs.close();
+                isConnected = false;
+            }catch (IOException es)
+            {
+                Toast.makeText(getBaseContext(), es.toString(), Toast.LENGTH_LONG).show();
+                finish();
+            }
         }
 
         return super.onOptionsItemSelected(item);
