@@ -1,6 +1,6 @@
 //baud hc-05 57600
 //baud hc-05 AT mode 38400
-//MAC 98:D3:33:80:68:00
+//MAC <Whatever your module's is>
 
 #include<SoftwareSerial.h>
 #define MAX_BUFF 64
