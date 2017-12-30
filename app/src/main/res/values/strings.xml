@@ -6,4 +6,5 @@
     <string name="back">BACK</string>
     <string name="SET">SET</string>
     <string name="instruct">SET COLOR</string>
+    <string name="cycle">CYCLE COLORS</string>
 </resources>

@@ -7,10 +7,24 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
-    <style name="SeekRed">
-        <item name="android:progressBackgroundTint">#f4511e</item>
-        <item name="android:progressTint">#388</item>
+    <style name="SeekRed" parent="android:Widget.Material.SeekBar">
+        <item name="android:progressBackgroundTint">#BB0099ff</item>
+        <item name="android:progressTint">#f4511e</item>
         <item name="android:colorControlActivated">#dd0000</item>
+    </style>
+    <style name="SeekGreen" parent="android:Widget.Material.SeekBar">
+        <item name="android:progressBackgroundTint">#BB0099ff</item>
+        <item name="android:progressTint">#00ff0d</item>
+        <item name="android:colorControlActivated">#157b11</item>
+    </style>
+    <style name="SeekBlue" parent="android:Widget.Material.SeekBar">
+        <item name="android:progressBackgroundTint">#BB0099ff</item>
+        <item name="android:progressTint">#224e99</item>
+        <item name="android:colorControlActivated">#009090</item>
+    </style>
+
+    <style name="dark">
+        <item name="android:background">#33333333</item>
     </style>
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
